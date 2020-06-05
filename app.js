@@ -6,7 +6,7 @@ app.use(express.json());
 
 const tours = JSON.parse(fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`));
 
-app.get('/api/v1/tours', (req, res) => {
+const getAllTours = (req, res) => {
   res
     .status(200)
     .json({
@@ -16,9 +16,8 @@ app.get('/api/v1/tours', (req, res) => {
         tours: tours
       }
     })
-});
-
-app.get('/api/v1/tours/:id', (req, res) => {
+};
+const getTourById = (req, res) => {
   const id = +req.params.id;
   const tour = tours.find(item => item.id === id);
   if(!tour) {return res.status(404).json({status:'fail', message: 'Data wasn\'t found'})}
@@ -30,9 +29,23 @@ app.get('/api/v1/tours/:id', (req, res) => {
         tour
       }
     })
-})
-
-app.patch('/api/v1/tours/:id', (req, res) => {
+};
+const createTour = (req, res) => {
+  const data = req.body;
+  const newId = tours[tours.length - 1].id + 1;
+  const newTour = {...data, id: newId};
+  tours.push(newTour);
+  fs.writeFile(`${__dirname}/dev-data/data/tours-simple.json`, JSON.stringify(tours), (err) => {
+    if(err) throw Error('something went wrong')
+    res.status(201).json({
+      status: 'success',
+      data: {
+        tour: newTour
+      }
+    });
+  });
+};
+const updateTour = (req, res) => {
   const id = +req.params.id;
   const isIndex = !!(~tours.findIndex(item => item.id === id));
   if(!isIndex) return res.status(404).json({status:'fail', message: 'wrong id'});
@@ -48,9 +61,8 @@ app.patch('/api/v1/tours/:id', (req, res) => {
       }
     });
   })
-})
-
-app.delete('/api/v1/tours/:id', (req, res) => {
+};
+const deleteTour = (req, res) => {
   const id = +req.params.id;
   const isIndex = !!(~tours.findIndex(item => item.id === id));
   
@@ -59,26 +71,24 @@ app.delete('/api/v1/tours/:id', (req, res) => {
   fs.writeFile(`${__dirname}/dev-data/data/tours-simple.json`, JSON.stringify(updatedTours), (err) => {
     res.status(204).json({status: 'success', data: null});
   });
+};
 
+// app.get('/api/v1/tours', getAllTours);
+// app.get('/api/v1/tours/:id', getTourById);
+// app.post('/api/v1/tours', createTour);
+// app.patch('/api/v1/tours/:id', updateTour);
+// app.delete('/api/v1/tours/:id', deleteTour);
 
-})
+app
+  .route('/api/v1/tours')
+  .get(getAllTours)
+  .post(createTour);
 
-app.post('/api/v1/tours', (req, res) => {
-  const data = req.body;
-  const newId = tours[tours.length - 1].id + 1;
-  const newTour = {...data, id: newId};
-  tours.push(newTour);
-  fs.writeFile(`${__dirname}/dev-data/data/tours-simple.json`, JSON.stringify(tours), (err) => {
-    if(err) throw Error('something went wrong')
-    res.status(201).json({
-      status: 'success',
-      data: {
-        tour: newTour
-      }
-    });
-  });
-})
-
+app
+  .route('/api/v1/tours/:id')
+  .get(getTourById)
+  .patch(updateTour)
+  .delete(deleteTour);
 
 const port = 3000;
 app.listen(port, () => {
