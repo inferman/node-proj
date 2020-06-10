@@ -3,9 +3,13 @@ const fs = require('fs');
 
 const tours = JSON.parse(fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`));
 
+exports.checkID = (req, res, next, val) => {
+  const isIndex = !!(~tours.findIndex(item => item.id === +val));
+  if(!isIndex) return res.status(404).json({status:'fail', message: 'wrong id'});
+  next();
+}
+
 exports.getAllTours = (req, res) => {
-  console.log(req.requestTime);
-  
   res
     .status(200)
     .json({
@@ -18,9 +22,7 @@ exports.getAllTours = (req, res) => {
     })
 };
 exports.getTourById = (req, res) => {
-  const id = +req.params.id;
-  const tour = tours.find(item => item.id === id);
-  if(!tour) {return res.status(404).json({status:'fail', message: 'Data wasn\'t found'})}
+  const tour = tours.find(item => item.id === +req.params.id);
   res
     .status(200)
     .json({
@@ -47,8 +49,6 @@ exports.createTour = (req, res) => {
 };
 exports.updateTour = (req, res) => {
   const id = +req.params.id;
-  const isIndex = !!(~tours.findIndex(item => item.id === id));
-  if(!isIndex) return res.status(404).json({status:'fail', message: 'wrong id'});
 
   let upd;
   const updatedTours = tours.map(tour => tour.id === id ? (upd = {...tour, ...req.body},upd) : tour);
@@ -62,12 +62,8 @@ exports.updateTour = (req, res) => {
     });
   })
 };
-exports.deleteTour = (req, res) => {
-  const id = +req.params.id;
-  const isIndex = !!(~tours.findIndex(item => item.id === id));
-  
-  if(!isIndex) return res.status(404).json({status:'fail', message: 'wrong id'})
-  const updatedTours = tours.filter(tour => tour.id !== id);
+exports.deleteTour = (req, res) => {  
+  const updatedTours = tours.filter(tour => tour.id !== +req.params.id);
   fs.writeFile(`${__dirname}/dev-data/data/tours-simple.json`, JSON.stringify(updatedTours), (err) => {
     res.status(204).json({status: 'success', data: null});
   });
