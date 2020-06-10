@@ -1,13 +1,18 @@
 const fs = require('fs');
 
-
-const tours = JSON.parse(fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`));
+const FILE_PATH = `${__dirname}/../dev-data/data/tours-simple.json`;
+const tours = JSON.parse(fs.readFileSync(FILE_PATH));
 
 exports.checkID = (req, res, next, val) => {
   const isIndex = !!(~tours.findIndex(item => item.id === +val));
   if(!isIndex) return res.status(404).json({status:'fail', message: 'wrong id'});
   next();
 }
+
+exports.checkBody = (req, res, next) => {
+  if(!req.body.name || !req.body.price) return res.status(400).json({status:'fail', message: 'Missing name or price!'});
+  next();
+};
 
 exports.getAllTours = (req, res) => {
   res
@@ -37,7 +42,7 @@ exports.createTour = (req, res) => {
   const newId = tours[tours.length - 1].id + 1;
   const newTour = {...data, id: newId};
   tours.push(newTour);
-  fs.writeFile(`${__dirname}/dev-data/data/tours-simple.json`, JSON.stringify(tours), (err) => {
+  fs.writeFile(FILE_PATH, JSON.stringify(tours), (err) => {
     if(err) throw Error('something went wrong')
     res.status(201).json({
       status: 'success',
@@ -52,7 +57,7 @@ exports.updateTour = (req, res) => {
 
   let upd;
   const updatedTours = tours.map(tour => tour.id === id ? (upd = {...tour, ...req.body},upd) : tour);
-  fs.writeFile(`${__dirname}/dev-data/data/tours-simple.json`, JSON.stringify(updatedTours), (err) => {
+  fs.writeFile(FILE_PATH, JSON.stringify(updatedTours), (err) => {
     if(err) throw Error('something went wrong')
     res.status(200).json({
       status: 'success',
@@ -64,7 +69,7 @@ exports.updateTour = (req, res) => {
 };
 exports.deleteTour = (req, res) => {  
   const updatedTours = tours.filter(tour => tour.id !== +req.params.id);
-  fs.writeFile(`${__dirname}/dev-data/data/tours-simple.json`, JSON.stringify(updatedTours), (err) => {
+  fs.writeFile(FILE_PATH, JSON.stringify(updatedTours), (err) => {
     res.status(204).json({status: 'success', data: null});
   });
 };
